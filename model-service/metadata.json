@@ -1,0 +1,69 @@
+{
+  "model_type": "RandomForestRegressor",
+  "features": [
+    "square_footage",
+    "bedrooms",
+    "bathrooms",
+    "year_built",
+    "lot_size",
+    "distance_to_city_center",
+    "school_rating"
+  ],
+  "feature_order": [
+    "square_footage",
+    "bedrooms",
+    "bathrooms",
+    "year_built",
+    "lot_size",
+    "distance_to_city_center",
+    "school_rating"
+  ],
+  "scaler_mean": [
+    1690.2,
+    3.04,
+    1.85,
+    1996.26,
+    7232.0,
+    4.638,
+    7.774
+  ],
+  "scaler_scale": [
+    420.90136611800153,
+    0.7472616676907762,
+    0.6946221994724902,
+    10.019600790450685,
+    1873.09262985043,
+    1.9138328035646166,
+    0.7926689094445423
+  ],
+  "metrics": {
+    "r2": 0.9953,
+    "rmse": 5152.31,
+    "mae": 4635.0
+  },
+  "feature_importances": {
+    "square_footage": 0.19849796979533352,
+    "bedrooms": 0.12905470059080015,
+    "bathrooms": 0.1013127117564209,
+    "year_built": 0.1394830498895387,
+    "lot_size": 0.11678477762177725,
+    "distance_to_city_center": 0.15996620053663693,
+    "school_rating": 0.15490058980949256
+  },
+  "all_results": [
+    {
+      "model": "LinearRegression",
+      "r2": 0.9811,
+      "rmse": 10277.05,
+      "mae": 7916.2,
+      "cv_r2_mean": 0.963
+    },
+    {
+      "model": "RandomForestRegressor",
+      "r2": 0.9953,
+      "rmse": 5152.31,
+      "mae": 4635.0,
+      "cv_r2_mean": 0.9864
+    }
+  ]
+}

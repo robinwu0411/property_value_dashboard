@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: market-backend
+  elasticsearch:
+    uris: ${ELASTICSEARCH_URL:http://elasticsearch:9200}
+
+server:
+  port: 8080
+
+model-service:
+  url: ${MODEL_SERVICE_URL:http://model-service:8000}
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      model-service:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /docs
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

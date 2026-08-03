@@ -1,0 +1,6 @@
+FROM python:3.12-slim
+WORKDIR /app
+RUN pip install --no-cache-dir "elasticsearch>=8,<9" pandas
+COPY scripts/seed_es.py .
+COPY data/ ./data/
+ENTRYPOINT ["python", "seed_es.py", "--es-url", "http://elasticsearch:9200", "--csv", "data/House Price Dataset.csv"]

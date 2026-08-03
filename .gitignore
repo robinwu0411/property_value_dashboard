@@ -1,0 +1,55 @@
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+
+# Node
+node_modules/
+.next/
+out/
+
+# Java
+target/
+*.class
+*.jar
+*.war
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Maven
+.m2/
+
+# Docker
+docker-compose.override.yml
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build
+build/
+dist/
+
+# Logs
+*.log
+
+# Testing
+.pytest_cache/
+coverage/
+
+# Build artifacts
+*.tsbuildinfo
+*.zip
