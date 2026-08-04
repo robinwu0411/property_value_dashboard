@@ -24,7 +24,7 @@ function getNums(sp: URLSearchParams, key: string): string[] {
 function restorePlus(exactVals: string[], sp: URLSearchParams, minKey: string): string[] {
   const minVal = sp.get(minKey);
   if (minVal) {
-    return [...exactVals, `${minVal}+`];
+    return [...exactVals, `>${minVal}`];
   }
   return exactVals;
 }
@@ -44,8 +44,8 @@ export default function FilterPanel() {
     distMax: getNum(searchParams, "maxDistanceToCityCenter", 10),
     priceMin: getNum(searchParams, "minPrice", 0),
     priceMax: getNum(searchParams, "maxPrice", 1000000),
-    bedrooms: restorePlus(getNums(searchParams, "bedrooms"), searchParams, "minBedrooms"),
-    bathrooms: restorePlus(getNums(searchParams, "bathrooms"), searchParams, "minBathrooms"),
+    bedrooms: restorePlus(getNums(searchParams, "bedrooms"), searchParams, "minBedrooms").filter((v) => v !== "NaN"),
+    bathrooms: restorePlus(getNums(searchParams, "bathrooms"), searchParams, "minBathrooms").filter((v) => v !== "NaN"),
     schoolRatingMin: getNum(searchParams, "minSchoolRating", 1),
     schoolRatingMax: getNum(searchParams, "maxSchoolRating", 10),
   }), [searchParams]);
@@ -74,14 +74,18 @@ export default function FilterPanel() {
     set("minSchoolRating", local.schoolRatingMin, 1);
     set("maxSchoolRating", local.schoolRatingMax, 10);
     local.bedrooms.forEach((v: string) => {
-      if (v.endsWith("+")) {
+      if (v.startsWith(">")) {
+        params.set("minBedrooms", v.replace(">", ""));
+      } else if (v.endsWith("+")) {
         params.set("minBedrooms", v.replace("+", ""));
       } else {
         params.append("bedrooms", v);
       }
     });
     local.bathrooms.forEach((v: string) => {
-      if (v.endsWith("+")) {
+      if (v.startsWith(">")) {
+        params.set("minBathrooms", v.replace(">", ""));
+      } else if (v.endsWith("+")) {
         params.set("minBathrooms", v.replace("+", ""));
       } else {
         params.append("bathrooms", v);
@@ -100,7 +104,6 @@ export default function FilterPanel() {
       bedrooms: [], bathrooms: [],
       schoolRatingMin: 1, schoolRatingMax: 10,
     });
-    router.push("/market");
   };
 
   return (

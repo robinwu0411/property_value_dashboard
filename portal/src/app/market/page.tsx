@@ -24,7 +24,10 @@ function filtersFromParams(searchParams: URLSearchParams): Record<string, unknow
   });
   ["bedrooms", "bathrooms"].forEach((key) => {
     const vals = searchParams.getAll(key);
-    if (vals.length) filters[key] = vals.map(Number);
+    if (vals.length) {
+      const nums = vals.map(Number).filter((n) => !isNaN(n));
+      if (nums.length) filters[key] = nums;
+    }
   });
   return filters;
 }
