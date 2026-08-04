@@ -5,14 +5,15 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
-import Card from "@/components/ui/Card";
 import {
   propertyFeaturesSchema,
   PropertyFeatures,
 } from "@/lib/validators";
 import { submitWhatIf, WhatIfResponse, ApiError } from "@/lib/api";
 
+let nextId = 1;
 interface Scenario {
+  id: string;
   features: Record<string, number>;
   label: string;
   result: WhatIfResponse;
@@ -37,6 +38,82 @@ const toCamel = (f: PropertyFeatures): Record<string, number> => ({
   distanceToCityCenter: f.distance_to_city_center,
   schoolRating: f.school_rating,
 });
+
+function formatPrice(v: number) {
+  return `$${v.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+}
+
+function ScenarioCard({
+  item,
+  baselinePrice,
+  isBaseline,
+  onRemove,
+}: {
+  item: Scenario;
+  baselinePrice: number | null;
+  isBaseline: boolean;
+  onRemove?: () => void;
+}) {
+  const delta = baselinePrice != null ? item.result.predictedPrice - baselinePrice : 0;
+  const deltaPct = baselinePrice != null ? (delta / baselinePrice) * 100 : 0;
+
+  return (
+    <div
+      className={`rounded-xl border-2 p-4 ${
+        isBaseline
+          ? "border-yellow-400 bg-yellow-50"
+          : "border-gray-200 bg-white"
+      }`}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-1.5">
+          {isBaseline && (
+            <span className="text-yellow-500 text-base">★</span>
+          )}
+          <span
+            className={`text-xs font-semibold uppercase ${
+              isBaseline ? "text-yellow-700" : "text-gray-500"
+            }`}
+          >
+            {isBaseline ? "Baseline" : item.label}
+          </span>
+        </div>
+        {!isBaseline && onRemove && (
+          <button
+            onClick={onRemove}
+            className="px-2 py-1 text-base text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+            title="Remove"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
+      <div className="text-[11px] text-gray-500 space-y-0.5 mb-3">
+        {Object.entries(item.features).map(([k, v]) => (
+          <span key={k} className="inline-block mr-2">
+            {FEATURE_LABELS[k] || k}: {v}
+          </span>
+        ))}
+      </div>
+
+      <div className="text-xl font-bold text-gray-900">
+        {formatPrice(item.result.predictedPrice)}
+      </div>
+      {!isBaseline && baselinePrice != null && (
+        <div
+          className={`text-xs font-medium mt-0.5 ${
+            delta >= 0 ? "text-green-600" : "text-red-600"
+          }`}
+        >
+          {delta >= 0 ? "▲" : "▼"} {formatPrice(Math.abs(delta))}{" "}
+          ({deltaPct >= 0 ? "+" : ""}
+          {deltaPct.toFixed(1)}%) vs baseline
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function WhatIfTool() {
   const [baseline, setBaseline] = useState<Scenario | null>(null);
@@ -65,11 +142,13 @@ export default function WhatIfTool() {
     setError(null);
     try {
       const result = await analyzeOne(features);
-      const label = `Scenario ${baseline ? scenarios.length + 1 : "Baseline"}`;
+      const id = String(nextId++);
+      const label = `Scenario ${id}`;
+      const scenario: Scenario = { id, features, label, result };
       if (!baseline) {
-        setBaseline({ features, label, result });
+        setBaseline(scenario);
       } else {
-        setScenarios((prev) => [...prev, { features, label, result }]);
+        setScenarios((prev) => [...prev, scenario]);
       }
     } catch (err) {
       if (err instanceof ApiError) {
@@ -82,17 +161,8 @@ export default function WhatIfTool() {
     }
   };
 
-  const removeScenario = (idx: number) => {
-    setScenarios((prev) => prev.filter((_, i) => i !== idx));
-  };
-
-  const makeBaseline = (idx: number) => {
-    const item = scenarios[idx];
-    setScenarios((prev) => prev.filter((_, i) => i !== idx));
-    if (baseline) {
-      setScenarios((prev) => [baseline, ...prev]);
-    }
-    setBaseline(item);
+  const removeScenario = (id: string) => {
+    setScenarios((prev) => prev.filter((s) => s.id !== id));
   };
 
   const clearAll = () => {
@@ -102,79 +172,12 @@ export default function WhatIfTool() {
     resetForm();
   };
 
-  const formatPrice = (v: number) =>
-    `$${v.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  const allCards = [
+    ...(baseline ? [{ item: baseline, isBaseline: true as const }] : []),
+    ...scenarios.map((item) => ({ item, isBaseline: false as const })),
+  ];
 
-  const ScenarioCard = ({
-    item,
-    isBaseline,
-    onSetBaseline,
-    onRemove,
-  }: {
-    item: Scenario;
-    isBaseline: boolean;
-    onSetBaseline?: () => void;
-    onRemove?: () => void;
-  }) => {
-    const delta = baseline
-      ? item.result.predictedPrice - baseline.result.predictedPrice
-      : 0;
-    const deltaPct = baseline
-      ? ((delta / baseline.result.predictedPrice) * 100)
-      : 0;
-
-    return (
-      <div
-        className={`rounded-xl border-2 p-4 min-w-[240px] flex-shrink-0 ${
-          isBaseline
-            ? "border-primary-500 bg-primary-50"
-            : "border-gray-200 bg-white"
-        }`}
-      >
-        <div className="flex items-center justify-between mb-2">
-          <span className={`text-xs font-semibold uppercase ${isBaseline ? "text-primary-700" : "text-gray-500"}`}>
-            {item.label}
-          </span>
-          <div className="flex gap-1">
-            {!isBaseline && onSetBaseline && (
-              <button onClick={onSetBaseline}
-                className="text-[10px] text-gray-400 hover:text-primary-600"
-                title="Set as baseline">
-                ★
-              </button>
-            )}
-            {!isBaseline && onRemove && (
-              <button onClick={onRemove}
-                className="text-[10px] text-gray-400 hover:text-red-600">✕</button>
-            )}
-          </div>
-        </div>
-
-        <div className="text-[11px] text-gray-500 space-y-0.5 mb-3">
-          {Object.entries(item.features).map(([k, v]) => (
-            <span key={k} className="inline-block mr-2">
-              {FEATURE_LABELS[k] || k}: {v}
-            </span>
-          ))}
-        </div>
-
-        <div className="text-xl font-bold text-gray-900">
-          {formatPrice(item.result.predictedPrice)}
-        </div>
-        {!isBaseline && baseline && (
-          <div
-            className={`text-xs font-medium mt-0.5 ${
-              delta >= 0 ? "text-green-600" : "text-red-600"
-            }`}
-          >
-            {delta >= 0 ? "▲" : "▼"} {formatPrice(Math.abs(delta))}{" "}
-            ({deltaPct >= 0 ? "+" : ""}
-            {deltaPct.toFixed(1)}%) vs baseline
-          </div>
-        )}
-      </div>
-    );
-  };
+  const baselinePrice = baseline?.result.predictedPrice ?? null;
 
   return (
     <div className="space-y-8">
@@ -264,17 +267,16 @@ export default function WhatIfTool() {
       {(baseline || scenarios.length > 0) && (
         <div className="max-w-5xl mx-auto">
           <h2 className="text-sm font-semibold text-gray-700 mb-3">Scenarios</h2>
-          <div className="flex flex-wrap gap-4">
-            {baseline && (
-              <ScenarioCard item={baseline} isBaseline />
-            )}
-            {scenarios.map((item, idx) => (
+          <div className="grid grid-cols-2 gap-4">
+            {allCards.map(({ item, isBaseline }) => (
               <ScenarioCard
-                key={idx}
+                key={item.id}
                 item={item}
-                isBaseline={false}
-                onSetBaseline={() => makeBaseline(idx)}
-                onRemove={() => removeScenario(idx)}
+                baselinePrice={baselinePrice}
+                isBaseline={isBaseline}
+                onRemove={
+                  !isBaseline ? () => removeScenario(item.id) : undefined
+                }
               />
             ))}
           </div>
