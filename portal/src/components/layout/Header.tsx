@@ -51,6 +51,7 @@ export default function Header() {
             className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-expanded={menuOpen}
+            aria-controls="mobile-nav"
             aria-label="Toggle navigation menu"
           >
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -64,7 +65,7 @@ export default function Header() {
         </div>
 
         {menuOpen && (
-          <nav className="md:hidden pb-3 space-y-1" aria-label="Mobile navigation">
+          <nav id="mobile-nav" className="md:hidden pb-3 space-y-1" aria-label="Mobile navigation">
             {NAV_LINKS.map((link) => {
               const isActive = link.href === activeHref;
               return (

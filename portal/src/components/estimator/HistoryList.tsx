@@ -110,12 +110,18 @@ const HistoryList = forwardRef<{ refresh: () => void }, HistoryListProps>(functi
                 <th className="w-8 px-1 py-2 text-center">
                   <input type="checkbox" checked={allChecked}
                     onChange={(e) => selectAll(e.target.checked)}
+                    aria-label="Select all"
                     className="cursor-pointer" />
                 </th>
                 {COLUMNS.map((col) => (
                   <th key={col.key}
-                    className="px-2 py-2 text-left font-medium text-gray-700 cursor-pointer select-none hover:bg-gray-100 transition-colors whitespace-nowrap"
-                    onClick={() => sort(col.key)}>
+                    role="button"
+                    tabIndex={0}
+                    aria-sort={sortBy === col.key ? (sortOrder === "asc" ? "ascending" : "descending") : "none"}
+                    className="px-2 py-2 text-left font-medium text-gray-700 cursor-pointer select-none hover:bg-gray-100 transition-colors whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+                    onClick={() => sort(col.key)}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); sort(col.key); } }}
+                  >
                     {col.label}
                     <SortIcon field={col.key} />
                   </th>
@@ -177,12 +183,14 @@ const HistoryList = forwardRef<{ refresh: () => void }, HistoryListProps>(functi
             className="px-2 py-1 rounded hover:bg-gray-100 disabled:opacity-30"
             disabled={page <= 1 || isLoading}
             onClick={() => fetchPage(page - 1, pageSize)}
+            aria-label="Previous page"
           >&lt;</button>
           <span className="px-2">{page}–{totalPages}</span>
           <button
             className="px-2 py-1 rounded hover:bg-gray-100 disabled:opacity-30"
             disabled={page >= totalPages || isLoading}
             onClick={() => fetchPage(page + 1, pageSize)}
+            aria-label="Next page"
           >&gt;</button>
         </div>
       </div>
