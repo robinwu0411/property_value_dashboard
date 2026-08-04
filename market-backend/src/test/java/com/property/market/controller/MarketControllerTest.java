@@ -110,17 +110,16 @@ class MarketControllerTest {
     }
 
     @Test
-    void export_shouldReturnExcelForXlsxFormat() throws Exception {
-        byte[] xlsx = new byte[]{(byte) 0x50, (byte) 0x4B, 0x03, 0x04};
-        when(marketService.exportExcel(any(FilterRequest.class))).thenReturn(xlsx);
+    void export_shouldReturnPdfForPdfFormat() throws Exception {
+        byte[] pdf = "%PDF-1.4 test".getBytes();
+        when(marketService.exportPdf(any(FilterRequest.class))).thenReturn(pdf);
 
         mockMvc.perform(get("/api/market/breakdown/export")
-                        .param("format", "xlsx"))
+                        .param("format", "pdf"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(
-                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .andExpect(content().contentType("application/pdf"))
                 .andExpect(header().string("Content-Disposition",
-                        "attachment; filename=\"properties.xlsx\""));
+                        "attachment; filename=\"properties.pdf\""));
     }
 
     @Test

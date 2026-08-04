@@ -118,7 +118,7 @@ class MarketServiceTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void exportExcel_shouldReturnBytes() {
+    void exportPdf_shouldReturnBytes() {
         PropertyDocument doc = doc();
         SearchHit<PropertyDocument> hit = (SearchHit<PropertyDocument>) mock(SearchHit.class);
         when(hit.getContent()).thenReturn(doc);
@@ -130,10 +130,9 @@ class MarketServiceTest {
         when(es.search(any(NativeQuery.class), eq(PropertyDocument.class)))
                 .thenReturn(searchHits);
 
-        byte[] result = marketService.exportExcel(new FilterRequest());
+        byte[] result = marketService.exportPdf(new FilterRequest());
         assertThat(result).isNotEmpty();
-        assertThat(result[0]).isEqualTo((byte) 0x50);
-        assertThat(result[1]).isEqualTo((byte) 0x4B);
+        assertThat(new String(result)).startsWith("%PDF");
     }
 
     @Test

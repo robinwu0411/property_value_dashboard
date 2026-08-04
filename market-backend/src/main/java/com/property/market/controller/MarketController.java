@@ -70,11 +70,10 @@ public class MarketController {
         byte[] data;
         MediaType contentType;
         String filename;
-        if ("xlsx".equalsIgnoreCase(format)) {
-            data = marketService.exportExcel(filter);
-            contentType = MediaType.parseMediaType(
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            filename = "properties.xlsx";
+        if ("pdf".equalsIgnoreCase(format)) {
+            data = marketService.exportPdf(filter);
+            contentType = MediaType.parseMediaType("application/pdf");
+            filename = "properties.pdf";
         } else {
             data = marketService.exportCsv(filter);
             contentType = MediaType.parseMediaType("text/csv");

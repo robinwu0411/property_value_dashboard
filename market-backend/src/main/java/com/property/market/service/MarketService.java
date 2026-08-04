@@ -1,11 +1,6 @@
 package com.property.market.service;
 
-import com.alibaba.excel.EasyExcel;
-import com.alibaba.excel.write.handler.SheetWriteHandler;
-import com.alibaba.excel.write.metadata.holder.WriteSheetHolder;
-import com.alibaba.excel.write.metadata.holder.WriteWorkbookHolder;
 import com.opencsv.CSVWriter;
-import org.apache.poi.ss.usermodel.Sheet;
 import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.aggregations.Aggregate;
 import co.elastic.clients.elasticsearch._types.aggregations.Aggregation;
@@ -40,6 +35,13 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 
 @Service
 public class MarketService {
@@ -161,43 +163,121 @@ public class MarketService {
         return out.toByteArray();
     }
 
-    public byte[] exportExcel(FilterRequest filter) {
+    public byte[] exportPdf(FilterRequest filter) {
         List<PropertyDocument> docs = fetchAll(filter);
-        List<List<String>> data = docs.stream().map(doc -> List.of(
-                String.valueOf(doc.getId()),
-                String.valueOf(doc.getSquareFootage()),
-                String.valueOf(doc.getBedrooms()),
-                String.valueOf(doc.getBathrooms()),
-                String.valueOf(doc.getYearBuilt()),
-                String.valueOf(doc.getLotSize()),
-                String.valueOf(doc.getDistanceToCityCenter()),
-                String.valueOf(doc.getSchoolRating()),
-                String.valueOf(doc.getPrice())
-        )).toList();
-
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        EasyExcel.write(out)
-                .head(List.of(List.of("ID"), List.of("Square Footage"), List.of("Bedrooms"),
-                        List.of("Bathrooms"), List.of("Year Built"), List.of("Lot Size"),
-                        List.of("Distance to City Center"), List.of("School Rating"), List.of("Price")))
-                .registerWriteHandler(new SheetWriteHandler() {
-                    @Override
-                    public void afterSheetCreate(WriteWorkbookHolder wb, WriteSheetHolder ws) {
-                        Sheet sheet = ws.getSheet();
-                        sheet.setColumnWidth(0, 8 * 256);
-                        sheet.setColumnWidth(1, 18 * 256);
-                        sheet.setColumnWidth(2, 12 * 256);
-                        sheet.setColumnWidth(3, 12 * 256);
-                        sheet.setColumnWidth(4, 14 * 256);
-                        sheet.setColumnWidth(5, 14 * 256);
-                        sheet.setColumnWidth(6, 24 * 256);
-                        sheet.setColumnWidth(7, 16 * 256);
-                        sheet.setColumnWidth(8, 16 * 256);
+        PDRectangle landscape = new PDRectangle(PDRectangle.A4.getHeight(), PDRectangle.A4.getWidth());
+        try (PDDocument document = new PDDocument()) {
+            document.getDocumentInformation().setTitle("Property Market Analysis Export");
+            float margin = 30;
+            float rowH = 20;
+            float headerH = 24;
+            float titleH = 36;
+            float fontSize = 8;
+            float tableWidth = landscape.getWidth() - 2 * margin;
+            float yStart = landscape.getHeight() - margin;
+
+            String[] headers = {"ID","SqFt","Beds","Baths","Year","Lot","Dist","School","Price"};
+            float[] colRatios = {0.04f,0.12f,0.07f,0.07f,0.07f,0.09f,0.10f,0.09f,0.35f};
+
+            float y = yStart;
+            PDPage page = null;
+            PDPageContentStream cs = null;
+            boolean firstPage = true;
+
+            int rowIdx = 0;
+            for (PropertyDocument row : docs) {
+                if (rowIdx % 35 == 0) {
+                    if (cs != null) cs.close();
+                    page = new PDPage(landscape);
+                    document.addPage(page);
+                    cs = new PDPageContentStream(document, page);
+                    y = yStart;
+                    if (firstPage) {
+                        String title = "Property Market Analysis";
+                        PDType1Font titleFont = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
+                        float titleSize = 14;
+                        float titleWidth = titleFont.getStringWidth(title) / 1000 * titleSize;
+                        cs.beginText();
+                        cs.setFont(titleFont, titleSize);
+                        cs.newLineAtOffset((landscape.getWidth() - titleWidth) / 2, y - 4);
+                        cs.showText(title);
+                        cs.endText();
+                        y -= titleH;
+                        firstPage = false;
                     }
-                })
-                .sheet("Properties")
-                .doWrite(data);
+                    drawPdfRow(cs, margin, y, colRatios, tableWidth, headerH, fontSize, headers, true);
+                    y -= headerH;
+                }
+                String[] cells = {
+                    String.valueOf(row.getId()),
+                    String.valueOf(row.getSquareFootage()),
+                    String.valueOf(row.getBedrooms()),
+                    String.valueOf(row.getBathrooms()),
+                    String.valueOf(row.getYearBuilt()),
+                    String.valueOf(row.getLotSize()),
+                    String.valueOf(row.getDistanceToCityCenter()),
+                    String.valueOf(row.getSchoolRating()),
+                    "$" + String.format("%,.0f", row.getPrice())
+                };
+                drawPdfRow(cs, margin, y, colRatios, tableWidth, rowH, fontSize, cells, false);
+                y -= rowH;
+                rowIdx++;
+            }
+
+            if (cs != null) cs.close();
+            document.save(out);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to generate PDF", e);
+        }
         return out.toByteArray();
+    }
+
+    private void drawPdfRow(PDPageContentStream cs, float x, float y, float[] ratios,
+                            float tableWidth, float rowH, float fontSize,
+                            String[] cells, boolean isHeader) throws java.io.IOException {
+        float[] widths = new float[ratios.length];
+        for (int i = 0; i < ratios.length; i++) widths[i] = ratios[i] * tableWidth;
+
+        if (isHeader) {
+            cs.setNonStrokingColor(0.9f, 0.9f, 0.9f);
+            float cx = x;
+            for (int i = 0; i < widths.length; i++) {
+                cs.addRect(cx, y - rowH, widths[i], rowH);
+                cx += widths[i] + 1;
+            }
+            cs.fill();
+        }
+
+        // grid lines
+        cs.setStrokingColor(0.8f, 0.8f, 0.8f);
+        cs.setLineWidth(0.5f);
+        float cx = x;
+        for (int i = 0; i <= widths.length; i++) {
+            cs.moveTo(cx, y);
+            cs.lineTo(cx, y - rowH);
+            if (i < widths.length) cx += widths[i] + 1;
+        }
+        cs.moveTo(x, y);
+        cs.lineTo(cx, y);
+        cs.moveTo(x, y - rowH);
+        cs.lineTo(cx, y - rowH);
+        cs.stroke();
+
+        cs.setNonStrokingColor(0, 0, 0);
+        cs.beginText();
+        cs.setFont(isHeader
+                ? new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD)
+                : new PDType1Font(Standard14Fonts.FontName.HELVETICA), fontSize);
+        float textY = y - rowH + (rowH - fontSize) / 2 + 1;
+        cx = x + 2;
+        for (int i = 0; i < cells.length; i++) {
+            cs.newLineAtOffset(cx, textY);
+            cs.showText(cells[i]);
+            cs.newLineAtOffset(-cx, -textY);
+            cx += widths[i] + 1;
+        }
+        cs.endText();
     }
 
     public WhatIfResponse whatIf(WhatIfRequest request) {

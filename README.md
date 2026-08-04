@@ -7,7 +7,7 @@ Full-stack property valuation platform with ML-powered price prediction, market 
 | Page | Route | Description |
 |------|-------|-------------|
 | **Estimator** | `/estimator` | Submit property features → get ML-predicted price. View paginated prediction history with server-side sorting and delete. Select up to 5 records for side-by-side comparison. |
-| **Market Analysis** | `/market` | Filter properties by price, size, bedrooms, bathrooms, school rating. Summary cards (average, median, min, max), distribution charts, and paginated breakdown table with sorting and CSV/Excel export. |
+| **Market Analysis** | `/market` | Filter properties by price, size, bedrooms, bathrooms, school rating. Summary cards (average, median, min, max), distribution charts, and paginated breakdown table with sorting and CSV/PDF export. |
 | **What-If** | `/market/what-if` | Multi-scenario comparison tool. First submission sets the baseline. Each additional scenario shows predicted price and delta (absolute + percentage) vs the baseline. Any scenario can be promoted to baseline. Session-only, no persistence. |
 
 ## Architecture
@@ -113,7 +113,7 @@ Swagger UI: http://localhost:8001/docs
 |--------|------|-------------|
 | `GET` | `/api/market/summary` | Filtered aggregate statistics (avg, median, min, max, distributions) |
 | `GET` | `/api/market/breakdown` | Paginated, filtered property list (`?page=1&pageSize=20`) |
-| `GET` | `/api/market/breakdown/export` | Export filtered results (`?format=csv\|xlsx`) |
+| `GET` | `/api/market/breakdown/export` | Export filtered results (`?format=csv\|pdf`) |
 | `POST` | `/api/market/what-if` | What-If analysis — predicted price comparison for multi-scenario evaluation |
 | `GET` | `/api/market/health` | Health check |
 
@@ -201,8 +201,8 @@ curl -X POST http://localhost:8080/api/market/what-if \
 # CSV
 curl "http://localhost:8080/api/market/breakdown/export?format=csv" -o properties.csv
 
-# Excel
-curl "http://localhost:8080/api/market/breakdown/export?format=xlsx" -o properties.xlsx
+# PDF
+curl "http://localhost:8080/api/market/breakdown/export?format=pdf" -o properties.pdf
 ```
 
 ---

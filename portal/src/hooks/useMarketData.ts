@@ -129,7 +129,7 @@ export function useMarketData(filters: Record<string, unknown>) {
     fetchChartData();
   }, [fetchSummary, fetchBreakdown, fetchChartData]);
 
-  const exportUrl = (format: "csv" | "xlsx") =>
+  const exportUrl = (format: "csv" | "pdf") =>
     getExportUrl({ ...filters, sortBy, sortOrder }, format);
 
   return {

@@ -197,7 +197,7 @@ export async function submitWhatIf(
 
 export function getExportUrl(
   filters: Record<string, unknown>,
-  format: "csv" | "xlsx"
+  format: "csv" | "pdf"
 ): string {
   return `${MARKET_URL}/api/market/breakdown/export${qs({ ...filters, format })}`;
 }

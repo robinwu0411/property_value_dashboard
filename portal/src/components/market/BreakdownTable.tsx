@@ -13,7 +13,7 @@ interface BreakdownTableProps {
   isLoading: boolean;
   onPageChange: (page: number, pageSize: number) => void;
   onSortChange: (sortBy: string, sortOrder: string) => void;
-  exportUrl: (format: "csv" | "xlsx") => string;
+  exportUrl: (format: "csv" | "pdf") => string;
 }
 
 interface ColSpec {
@@ -78,7 +78,7 @@ export default function BreakdownTable({
         </h2>
         <div className="flex gap-2">
           <Button size="sm" onClick={() => window.open(exportUrl("csv"), "_blank")}>Export CSV</Button>
-          <Button size="sm" onClick={() => window.open(exportUrl("xlsx"), "_blank")}>Export Excel</Button>
+          <Button size="sm" onClick={() => window.open(exportUrl("pdf"), "_blank")}>Export PDF</Button>
         </div>
       </div>
 
