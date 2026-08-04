@@ -98,11 +98,13 @@ export interface HistoryListResponse {
 }
 
 export async function submitEstimate(
-  features: Record<string, number>
+  features: Record<string, number>,
+  signal?: AbortSignal
 ): Promise<EstimateResponse> {
   return request<EstimateResponse>(`${ESTIMATOR_URL}/api/estimate`, {
     method: "POST",
     body: JSON.stringify(features),
+    signal,
   });
 }
 
@@ -111,9 +113,11 @@ export async function getHistory(
   pageSize: number,
   sortBy?: string,
   sortOrder?: string,
+  signal?: AbortSignal
 ): Promise<HistoryListResponse> {
   return request<HistoryListResponse>(
-    `${ESTIMATOR_URL}/api/history${qs({ page, page_size: pageSize, sort_by: sortBy, sort_order: sortOrder })}`
+    `${ESTIMATOR_URL}/api/history${qs({ page, page_size: pageSize, sort_by: sortBy, sort_order: sortOrder })}`,
+    { signal }
   );
 }
 

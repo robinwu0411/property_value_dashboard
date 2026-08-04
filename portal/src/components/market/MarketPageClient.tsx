@@ -1,0 +1,88 @@
+"use client";
+
+import { useSearchParams } from "next/navigation";
+import FilterPanel from "./FilterPanel";
+import SummaryCards from "./SummaryCards";
+import MarketCharts from "./MarketCharts";
+import BreakdownTable from "./BreakdownTable";
+import { useMarketData } from "@/hooks/useMarketData";
+import { MarketStatsResponse, BreakdownPageResponse } from "@/lib/api";
+
+function filtersFromParams(searchParams: URLSearchParams): Record<string, unknown> {
+  const filters: Record<string, unknown> = {};
+  const rangeKeys = [
+    "minSquareFootage", "maxSquareFootage",
+    "minYearBuilt", "maxYearBuilt",
+    "minLotSize", "maxLotSize",
+    "minDistanceToCityCenter", "maxDistanceToCityCenter",
+    "minPrice", "maxPrice",
+    "minSchoolRating", "maxSchoolRating",
+    "minBedrooms", "minBathrooms",
+  ];
+  rangeKeys.forEach((key) => {
+    const v = searchParams.get(key);
+    if (v) filters[key] = Number(v);
+  });
+  ["bedrooms", "bathrooms"].forEach((key) => {
+    const vals = searchParams.getAll(key);
+    if (vals.length) {
+      const nums = vals.map(Number).filter((n) => !isNaN(n));
+      if (nums.length) filters[key] = nums;
+    }
+  });
+  return filters;
+}
+
+interface MarketPageClientProps {
+  initialSummary: MarketStatsResponse | null;
+  initialBreakdown: BreakdownPageResponse | null;
+}
+
+export default function MarketPageClient({ initialSummary, initialBreakdown }: MarketPageClientProps) {
+  const searchParams = useSearchParams();
+  const filters = filtersFromParams(searchParams);
+
+  const {
+    summary,
+    breakdown,
+    chartData,
+    total,
+    page,
+    pageSize,
+    sortBy,
+    sortOrder,
+    isLoading,
+    fetchBreakdown,
+    handleSort,
+    exportUrl,
+  } = useMarketData(filters, initialSummary, initialBreakdown);
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">
+        Property Market Analysis
+      </h1>
+
+      <div className="flex flex-col lg:flex-row gap-8">
+        <FilterPanel />
+
+        <div className="flex-1 min-w-0 space-y-8">
+          <SummaryCards stats={summary} />
+          <MarketCharts stats={summary} properties={chartData} />
+          <BreakdownTable
+            data={breakdown}
+            total={total}
+            page={page}
+            pageSize={pageSize}
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            isLoading={isLoading}
+            onPageChange={(p, ps) => fetchBreakdown(p, ps)}
+            onSortChange={handleSort}
+            exportUrl={exportUrl}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}

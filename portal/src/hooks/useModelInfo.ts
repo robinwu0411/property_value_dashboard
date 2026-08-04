@@ -1,35 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { getModelInfo, ModelInfo, ApiError } from "@/lib/api";
 
 export function useModelInfo() {
   const [modelInfo, setModelInfo] = useState<ModelInfo | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    getModelInfo()
-      .then((data) => {
-        if (!cancelled) setModelInfo(data);
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          if (err instanceof ApiError) {
-            setError(err.detail || err.message);
-          } else {
-            setError("Failed to load model info.");
-          }
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const fetchModelInfo = useCallback(async () => {
+    if (modelInfo) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await getModelInfo();
+      setModelInfo(data);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.detail || err.message);
+      } else {
+        setError("Failed to load model info.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [modelInfo]);
 
-  return { modelInfo, isLoading, error };
+  return { modelInfo, isLoading, error, fetchModelInfo };
 }

@@ -3,7 +3,7 @@
 import { forwardRef, useImperativeHandle, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useHistory } from "@/hooks/useHistory";
-import { HistoryItem } from "@/lib/api";
+import { HistoryItem, HistoryListResponse } from "@/lib/api";
 import Button from "@/components/ui/Button";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { format } from "date-fns";
@@ -30,8 +30,12 @@ const COLUMNS: ColSpec[] = [
     `$${(i.predicted_price ?? 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` },
 ];
 
-const HistoryList = forwardRef<{ refresh: () => void }>(function HistoryList(_props, ref) {
-  const { items, total, page, pageSize, sortBy, sortOrder, isLoading, error, fetchPage, sort, deleteItem, refresh } = useHistory();
+interface HistoryListProps {
+  initialHistory?: HistoryListResponse | null;
+}
+
+const HistoryList = forwardRef<{ refresh: () => void }, HistoryListProps>(function HistoryList({ initialHistory }, ref) {
+  const { items, total, page, pageSize, sortBy, sortOrder, isLoading, error, fetchPage, sort, deleteItem, refresh } = useHistory(initialHistory);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [pendingDelete, setPendingDelete] = useState<HistoryItem | null>(null);
   const router = useRouter();

@@ -20,7 +20,7 @@ interface PredictionFormProps {
 
 export default function PredictionForm({ onPredicted }: PredictionFormProps) {
   const { result, isLoading, error, predict, reset } = usePrediction();
-  const { modelInfo } = useModelInfo();
+  const { modelInfo, fetchModelInfo } = useModelInfo();
   const [submittedFeatures, setSubmittedFeatures] = useState<Record<string, number> | null>(null);
 
   const {
@@ -39,6 +39,7 @@ export default function PredictionForm({ onPredicted }: PredictionFormProps) {
     if (ok) {
       setSubmittedFeatures(features);
       onPredicted?.();
+      fetchModelInfo();
     }
   };
 

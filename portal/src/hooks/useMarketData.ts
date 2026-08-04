@@ -6,20 +6,25 @@ import {
   getMarketBreakdown,
   getExportUrl,
   MarketStatsResponse,
+  BreakdownPageResponse,
   PropertyResponse,
   ApiError,
 } from "@/lib/api";
 
-export function useMarketData(filters: Record<string, unknown>) {
-  const [summary, setSummary] = useState<MarketStatsResponse | null>(null);
-  const [breakdown, setBreakdown] = useState<PropertyResponse[]>([]);
+export function useMarketData(
+  filters: Record<string, unknown>,
+  initialSummary?: MarketStatsResponse | null,
+  initialBreakdown?: BreakdownPageResponse | null
+) {
+  const [summary, setSummary] = useState<MarketStatsResponse | null>(initialSummary ?? null);
+  const [breakdown, setBreakdown] = useState<PropertyResponse[]>(initialBreakdown?.items ?? []);
   const [chartData, setChartData] = useState<PropertyResponse[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [total, setTotal] = useState(initialBreakdown?.total ?? 0);
+  const [page, setPage] = useState(initialBreakdown?.page ?? 1);
+  const [pageSize, setPageSize] = useState(initialBreakdown?.pageSize ?? 20);
   const [sortBy, setSortBy] = useState("");
   const [sortOrder, setSortOrder] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(!initialBreakdown);
   const [error, setError] = useState<string | null>(null);
 
   // refs to always read latest sort values from callbacks regardless of closure
@@ -27,6 +32,7 @@ export function useMarketData(filters: Record<string, unknown>) {
   const sortOrderRef = useRef("");
   const abortRef = useRef<AbortController | null>(null);
   const chartAbortRef = useRef<AbortController | null>(null);
+  const initialProvided = useRef(!!initialBreakdown);
 
   const fetchSummary = useCallback(async () => {
     try {
@@ -124,8 +130,10 @@ export function useMarketData(filters: Record<string, unknown>) {
   }, [JSON.stringify(filters)]);
 
   useEffect(() => {
-    fetchSummary();
-    fetchBreakdown(1, 20);
+    if (!initialProvided.current) {
+      fetchSummary();
+      fetchBreakdown(1, 20);
+    }
     fetchChartData();
   }, [fetchSummary, fetchBreakdown, fetchChartData]);
 

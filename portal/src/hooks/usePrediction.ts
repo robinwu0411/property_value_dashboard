@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   submitEstimate,
   EstimateResponse,
@@ -11,16 +11,22 @@ export function usePrediction() {
   const [result, setResult] = useState<EstimateResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const predict = async (features: Record<string, number>) => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setIsLoading(true);
     setError(null);
     setResult(null);
     try {
-      const data = await submitEstimate(features);
+      const data = await submitEstimate(features, controller.signal);
       setResult(data);
       return true;
     } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return false;
       if (err instanceof ApiError) {
         setError(err.detail || err.message);
       } else {

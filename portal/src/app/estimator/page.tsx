@@ -1,20 +1,13 @@
-"use client";
+import EstimatorPageClient from "@/components/estimator/EstimatorPageClient";
+import { getHistory, HistoryListResponse } from "@/lib/api";
 
-import { useRef, useCallback } from "react";
-import PredictionForm from "@/components/estimator/PredictionForm";
-import HistoryList from "@/components/estimator/HistoryList";
+export default async function EstimatorPage() {
+  let initialHistory: HistoryListResponse | null = null;
+  try {
+    initialHistory = await getHistory(1, 20);
+  } catch {
+    // fall back to client-side fetch
+  }
 
-export default function EstimatorPage() {
-  const historyRef = useRef<{ refresh: () => void }>(null);
-
-  const onPredicted = useCallback(() => {
-    historyRef.current?.refresh();
-  }, []);
-
-  return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      <PredictionForm onPredicted={onPredicted} />
-      <HistoryList ref={historyRef} />
-    </div>
-  );
+  return <EstimatorPageClient initialHistory={initialHistory} />;
 }
