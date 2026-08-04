@@ -32,7 +32,7 @@ export function useMarketData(
   const sortOrderRef = useRef("");
   const abortRef = useRef<AbortController | null>(null);
   const chartAbortRef = useRef<AbortController | null>(null);
-  const initialProvided = useRef(!!initialBreakdown);
+  const skipInitialRef = useRef(!!initialBreakdown);
 
   const fetchSummary = useCallback(async () => {
     try {
@@ -130,10 +130,13 @@ export function useMarketData(
   }, [JSON.stringify(filters)]);
 
   useEffect(() => {
-    if (!initialProvided.current) {
-      fetchSummary();
-      fetchBreakdown(1, 20);
+    if (skipInitialRef.current) {
+      skipInitialRef.current = false;
+      fetchChartData();
+      return;
     }
+    fetchSummary();
+    fetchBreakdown(1, 20);
     fetchChartData();
   }, [fetchSummary, fetchBreakdown, fetchChartData]);
 
